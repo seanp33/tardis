@@ -1,0 +1,3 @@
+experiements with *simile timeline widget
+
+* http://www.simile-widgets.org/timeline/

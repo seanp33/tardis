@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <link rel="stylesheet" href="css/reset.css" type="text/css" media="screen" />
+  <link rel="stylesheet" href="css/graphics.css" type="text/css" media="screen" />
+  <link rel="stylesheet" href="css/timeline-bundle.css" type="text/css" media="screen" />
+  <link rel="stylesheet" href="css/main.css" type="text/css" media="screen" />
+  
+  <script type="text/javascript">
+    var Timeline_ajax_url="js/timeline/ajax/simile-ajax-api.js";
+    var Timeline_urlPrefix="js/timeline/";
+  </script>
+  <script src="js/timeline/timeline-api.js?bundle=true" type="text/javascript"></script>
+    <script src="js/app.js" type="text/javascript"></script>
+    
+    <script type="text/javascript">
+        
+        function onLoad(){
+          console.log("onLoad");
+          this.app = new App();
+	  startSimulation();
+        }
+        
+        var resizeTimerID = null;
+        function onResize(){
+          if (resizeTimerID == null) {
+            resizeTimerID = window.setTimeout(function() {
+              resizeTimerID = null;
+              console.log("onResize");
+              app.layout();
+            }, 500);
+          }
+        }
+        
+        function startSimulation(){
+	  app.startSimulation({'wildflower':document.getElementById('timeline-container')});
+        }
+        
+        function stopSimulation(){
+          app.stopSimulation();
+        }
+        
+        
+    </script>
+</head>
+
+<body onload="onLoad();" onresize="onResize();">
+    <div id="control-bar">
+      
+    </div>
+    
+    <div id="timeline-container" class="tardis"></div>
+    
+</body>
+</html>
