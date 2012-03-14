@@ -98,8 +98,10 @@ App.Tardis.prototype = {
         this.timeline = Timeline.create(this.container, bandInfos, Timeline.HORIZONTAL);
     },
     
-    chase:function(chaseInterval){
-        var pxlLen = this.timeline.getPixelLength();
+    chase:function(chaseInterval){        
+	var now = new Date();
+	this.expireDurationEvents(now);
+
         var bands = this.timeline._bands;
 	
 	var dragging = false;
@@ -111,10 +113,8 @@ App.Tardis.prototype = {
 	}
 	
 	if(!dragging){
-	    var now = new Date();
 	    bands[0].scrollToCenter(now);
-	    this.expireDurationEvents(now);
-	}	
+	}
     },
     
     start:function(){
@@ -138,7 +138,7 @@ App.Tardis.prototype = {
     onGenerated:function(data){
         console.log("Tardis <" + this.id + "> handling generated <" + data._text+ ">");
 	
-	if(data._end != undefined){
+	if(!data._instant){
 	    this.durationEvents.push(data);
 	}
         this.eventSource._events.add(data);
@@ -150,11 +150,13 @@ App.Tardis.prototype = {
 	var maintained=[];
 	for(var i=0;i<this.durationEvents.length;i++){
 	    var event = this.durationEvents[i];
-	    if(date.getMilliseconds() >= event._end.getMilliseconds()){
-		// TODO: work out a way to update the style of duration events which are complete
-		//event._tapeImage=null;
-		//event._tapeRepeat=null;
-		//event._color='black';
+	    if(date.getTime() >= event._end.getTime()){
+		event._tapeImage=null;
+		event._tapeRepeat=null;
+		event._color='black';
+		
+		// force a repaint so that style changes apply immediately 
+		this.timeline._bands[0]._eventPainter.paint();
 	    }else{		
 		maintained.push(event);
 	    }
