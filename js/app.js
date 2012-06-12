@@ -155,7 +155,8 @@ App.Tardis.prototype = {
 		event._tapeRepeat=null;
 		event._color='black';
 		
-		// force a repaint so that style changes apply immediately 
+		// force a repaint so that style changes apply immediately
+		// http://code.google.com/p/simile-widgets/wiki/Timeline_EventPainterClass
 		this.timeline._bands[0]._eventPainter.paint();
 	    }else{		
 		maintained.push(event);
