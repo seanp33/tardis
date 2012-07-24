@@ -3,7 +3,8 @@ body{
 }
 
 #control-bar{
-    margin:15px 0px 15px 0px;
+    margin:15px 0px 15px 15px;
+    text-align: left;
 }
 
 .tardis{
@@ -19,3 +20,25 @@ body{
 .timeline-event-icon{
     margin-left:-5px;
 }
+
+.debug{
+    border-width: 1px;
+    border-color: red;
+    border-style: solid;
+    background: rgba(0, 0, 0, 0.6)
+}
+
+        #debugPanel {
+	    background-color:#c0c0c0;
+	    color: orange;
+            font-family: 'Lucida Sans Unicode', Arial, sans-serif;
+            font-size: 11px;
+            line-height: 25px;
+            margin:20px;
+	    width:300px;
+        }
+
+        .rounded {
+            -moz-border-radius: 5px;
+            border-radius: 5px;
+        }
