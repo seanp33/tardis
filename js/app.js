@@ -64,6 +64,7 @@ App.Tardis = function(id, container) {
     this.id = id;
     this.container = container;
     this.trend = null;
+    this.tren2 = null;
     this.eventSource = new Timeline.DefaultEventSource();
     this.timeline = null;
     this.chartOverlay = null;
@@ -112,18 +113,25 @@ App.Tardis.prototype = {
 	var inners = dojo.query('> div .timeline-band-inner', this.container);
 
 	if (inners.length > 0) {
-	    this.initMockCharting(inners[0]);
+	    this.initTrend1(inners[0]);
 	}else{
 	    throw new Error("could not locate timeline-band-inner within container");
 	}	
     },
     
-    initMockCharting:function(inner){
+    initTrend1:function(inner){
 	var chartOverlayId = this.id + "ChartContainer";
-	this.chartOverlay = dojo.create("div", {id:chartOverlayId, class:'timeline-band-layer', style:{'z-index':'200'}}, inner);	    
+	this.chartOverlay = dojo.create("div", {id:chartOverlayId, class:'timeline-band-layer debug', style:{'z-index':'200'}}, inner);	    
 	var pos = dojo.position(this.container);
-	this.trend = new App.Trend(chartOverlayId, pos.w, pos.h);
+	this.trend = new App.Trend(this.chartOverlay, pos.w*2, pos.h);
 	this.trend.paint();
+    },
+
+    initTrend2:function(inner){	
+	var chartOverlayId = this.id + "ChartContainer2";
+	this.chartOverlay = dojo.create("div", {id:chartOverlayId, class:'timeline-band-layer', style:{'z-index':'201'}}, inner);	    
+	var pos = dojo.position(this.container);
+	this.trend2 = new App.Trend2(this.eventSource, chartOverlayId, pos.w, pos.h);
     },
 
     toggleChase:function() {
@@ -150,6 +158,8 @@ App.Tardis.prototype = {
         if (!dragging) {
             bands[0].scrollToCenter(now);
         }
+
+	this.trend.generatePoint();
     },
 
     start:function() {
@@ -162,7 +172,7 @@ App.Tardis.prototype = {
     },
 
     layout:function() {
-        this.timeline.layout();
+	this.timeline.layout();
     },
 
     destroy:function() {
@@ -178,7 +188,6 @@ App.Tardis.prototype = {
         }
         this.eventSource._events.add(data);
         this.eventSource._fire("onAddMany", []);
-        this.layout();
     },
 
     expireDurationEvents:function(date) {
@@ -224,7 +233,7 @@ App.Generator = function(tardis) {
     this.utils = new App.Utils();
 }
 
-App.Generator.icons = ["asterisk_orange.png","flag_yellow.png","lightning.pngg","tick.png","bomb.png","heart.png","rosette.png","bug.png","exclamation.png","help.png","star.png","eye.png","information.png","stop.png","flag_green.png","lightbulb.png","tag_blue_edit.png"];
+App.Generator.icons = ["asterisk_orange.png","flag_yellow.png","lightning.png","tick.png","bomb.png","heart.png","rosette.png","bug.png","exclamation.png","help.png","star.png","eye.png","information.png","stop.png","flag_green.png","lightbulb.png","tag_blue_edit.png"];
 App.Generator.colors = ['#0e3d59','brown','#b2d923','#f29f05','#f25c05','#d92525'];
 App.Generator.prototype = {
 
@@ -315,21 +324,22 @@ App.Utils.prototype = {
     }
 }
 
-App.Trend = function(containerId, width, height){
+App.Trend = function(container, width, height){
     this._paper = null;    
     this._points = [];
+    this._container = container;
     this.utils = new App.Utils();
-    this._init(containerId, width, height);
+    this._init(width, height);
 }
 
 App.Trend.prototype = {
     
-    _init:function(containerId, width, height){
-	this._paper = Raphael(containerId, width, height);
+    _init:function(width, height){
+	this._paper = Raphael(this._container.getAttribute("id"), width, height);
 	var x = 0
 	for(var i=0;i<100;i++){
 	    x += (i + this.utils.randRange(1, 10));
-	    this.addPoint(x, this.utils.randRange(20, 100));
+	    this.addPoint(x, this.utils.randRange(10, height-50));
 	}
     },
 
@@ -337,24 +347,65 @@ App.Trend.prototype = {
 	this._points.push({x:x,y:y});
     },
 
-    paint:function(){
+    generatePoint:function(){
+	return;
+	var pp = this._points[this._points.length -1];
+	var x = (pp.x + this.utils.randRange(1, 10));
+	var y =  this.utils.randRange(10, this._paper.height-50);
+	
+	this.addPoint(x, y);
+	
 	var len = this._points.length;
-	for(var i=0;i<len;i++){
-	    var p = this._points[i];
-	    var c = this._paper.circle(p.x, p.y, 6);
-	    c.attr("fill", "#000");
-	    c.attr("stroke", "#fff");
-	}
+	var p1 = this._points[len-2];
+	var p2 = this._points[len-1];	    
+	var path = "M" + p1.x + " " + p1.y + " L" + p2.x + " " + p2.y;
+	var c = this._paper.circle(p.x, p.y, 10);
+	c.attr("fill", "#000");
+	c.attr("stroke", "#fff");
+	c.attr("stroke-width", 3);
+	var t = this._paper.text(p.x, p.y, i);
+	t.attr("fill", "#fff");
 
+	// update the width of the container and the paper to account for new points
+	//this._paper.width += 20;	
+	//var cwidth = dojo.style(this._container, "width");
+	//dojo.style(this._container, "width", cwidth+20 + "px");
+    },
+
+    paint:function(){
+	console.log('painting');
+	var len = this._points.length;
+	
+	// edges
 	for(var i=0;i<len;i++){
 	    if(i+1 != len){
 		var p1 = this._points[i];
-		var p2 = this._points[i+1];
-	    
+		var p2 = this._points[i+1];	    
 		var path = "M" + p1.x + " " + p1.y + " L" + p2.x + " " + p2.y;
-		console.log(path);
-		this._paper.path(path).attr("fill", "red").attr("stroke-width", 3);
+		this._paper.path(path).attr("stroke-width", 1);
 	    }
 	}
+
+	// nodes
+	for(var i=0;i<len;i++){
+	    var p = this._points[i];
+	    var c = this._paper.circle(p.x, p.y, 10);
+	    c.attr("fill", "#000");
+	    c.attr("stroke", "#fff");
+	    c.attr("stroke-width", 3);
+	    var t = this._paper.text(p.x, p.y, i);
+	    t.attr("fill", "#fff");
+	}
     }   
+}
+
+App.Trend2 = function(eventSource, containerId, width, height){
+    this._eventSource = eventSource;
+    this._paper = Raphael(containerId, width, height);
+}
+
+App.Trend2.prototype = {
+    update:function(){
+	console.log(this._eventSource);
+    }
 }

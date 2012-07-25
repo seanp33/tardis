@@ -22,10 +22,10 @@ body{
 }
 
 .debug{
-    border-width: 1px;
+    border-width: 3px;
     border-color: red;
     border-style: solid;
-    background: rgba(0, 0, 0, 0.6)
+    /*background: rgba(0, 0, 0, 0.6)*/
 }
 
         #debugPanel {
