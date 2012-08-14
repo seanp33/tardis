@@ -3,9 +3,9 @@ function App() {
     this.chaseInterval = 1000;
 
     var self = this;
-    document.getElementById('chaseBtn').addEventListener("click", function() {
+    document.getElementById('pauseBtn').addEventListener("click", function() {
         for (var i = 0; i < self.tards.length; i++) {
-            self.tards[i].toggleChase();
+            self.tards[i].pause();
         }
     });
 }
@@ -64,20 +64,21 @@ App.Tardis = function(id, container) {
     this.id = id;
     this.container = container;
     this.trend = null;
-    this.tren2 = null;
     this.eventSource = new Timeline.DefaultEventSource();
     this.timeline = null;
     this.chartOverlay = null;
     this.durationEvents = [];
     this.generator = new App.Generator(this);
     this.paused = false;
-    this._configureBands(this.container);
+    this._etherDelegate = null;
+    this._initTimeline(this.container);
+    this._initEtherDelegate();
+    this._initRecenterDivHandler();
+    this._initTrending();
 }
 
 App.Tardis.prototype = {
-
-    _configureBands:function() {
-
+    _initTimeline:function() {
         var theme = Timeline.ClassicTheme.create();
         theme.event.bubble.width = 250;
         theme.event.tape.height = 10;
@@ -108,35 +109,63 @@ App.Tardis.prototype = {
 
         bandInfos[1].syncWith = 0;
         bandInfos[1].highlight = true;
+	
         this.timeline = Timeline.create(this.container, bandInfos, Timeline.HORIZONTAL);
-
-	var inners = dojo.query('> div .timeline-band-inner', this.container);
-
-	if (inners.length > 0) {
-	    this.initTrend1(inners[0]);
-	}else{
-	    throw new Error("could not locate timeline-band-inner within container");
-	}	
     },
     
-    initTrend1:function(inner){
+    _initEtherDelegate:function(){
+	var ether = this.timeline._bands[0]._ether;	
+	var etherPainter = this.timeline._bands[0]._etherPainter;
+	var eventPainter = this.timeline._bands[0]._eventPainter;
+	this._etherDelegate = {
+
+	    timeline:this.timeline,
+	    ether:ether,
+	    etherPainter:etherPainter,
+	    eventPainter:eventPainter,
+
+	    dateToPixelOffset:function(fromDate, toDate){
+		return ether.dateToPixelOffset.call(ether, fromDate, toDate);
+	    },
+	    
+	    pixelOffsetToDate:function(pixels){
+		console.log("pixelOffsetToDate: " + pixels);
+		return ether.pixelOffsetToDate.call(ether, pixels);
+	    }
+	}
+    },
+
+    _initRecenterDivHandler:function(){
+	var band = this.timeline._bands[0];
+	dojo.connect(band, '_recenterDiv', this, '_onRecenterDiv');
+	//dojo.connect(band, 'setBandShiftAndWidth', this, '_onSetBandShiftAndWidth')
+    },
+    
+    _initTrending:function(inner){	
+	var inners = dojo.query('> div .timeline-band-inner', this.container);
+	
+	if (inners.length == 0) {
+	    throw new Error("could not locate timeline-band-inner within container");	    
+	}
+	
+	this.chartOverlayContainer = inners[0];
 	var chartOverlayId = this.id + "ChartContainer";
-	this.chartOverlay = dojo.create("div", {id:chartOverlayId, class:'timeline-band-layer debug', style:{'z-index':'200'}}, inner);	    
-	var pos = dojo.position(this.container);
-	this.trend = new App.Trend(this.chartOverlay, pos.w*2, pos.h);
+	this.chartOverlay = dojo.create("div", {id:chartOverlayId, class:'timeline-band-layer', style:{'z-index':'200'}}, this.chartOverlayContainer);	    
+	this.trend = new App.Trend(this._etherDelegate, this.chartOverlay, this.chartOverlayContainer);
 	this.trend.paint();
     },
 
-    initTrend2:function(inner){	
-	var chartOverlayId = this.id + "ChartContainer2";
-	this.chartOverlay = dojo.create("div", {id:chartOverlayId, class:'timeline-band-layer', style:{'z-index':'201'}}, inner);	    
-	var pos = dojo.position(this.container);
-	this.trend2 = new App.Trend2(this.eventSource, chartOverlayId, pos.w, pos.h);
+    _onRecenterDiv:function(){
+	console.log("recentering...");
     },
 
-    toggleChase:function() {
+    pause:function() {
         this.paused = !this.paused;
-        console.log('this.paused: ' + this.paused);
+	if(this.paused){
+	    this.generator.stop();
+	}else{
+	    this.generator.start();
+	}
     },
 
     chase:function(chaseInterval) {
@@ -158,8 +187,6 @@ App.Tardis.prototype = {
         if (!dragging) {
             bands[0].scrollToCenter(now);
         }
-
-	this.trend.generatePoint();
     },
 
     start:function() {
@@ -181,13 +208,13 @@ App.Tardis.prototype = {
     },
 
     onGenerated:function(data) {
-        console.log("Tardis <" + this.id + "> handling generated <" + data._text + ">");
-
         if (!data._instant) {
             this.durationEvents.push(data);
         }
         this.eventSource._events.add(data);
         this.eventSource._fire("onAddMany", []);
+
+	this.trend.generatePoint(new Date());
     },
 
     expireDurationEvents:function(date) {
@@ -292,13 +319,13 @@ App.Generator.prototype = {
                 tapeRepeat:'x-repeat'
             });
         } else {
-            return new Timeline.DefaultEventSource.Event({
-                icon:icon,
-                start:date,
-                instant:true,
-                description:'generated for tardis ' + this.tardis.id,
-                text:lbl
-            });
+	    	return new Timeline.DefaultEventSource.Event({
+		    icon:icon,
+		    start:date,
+		    instant:true,
+		    description:'generated for tardis ' + this.tardis.id,
+		    text:lbl
+		});	   
         }
     },
 
@@ -318,62 +345,70 @@ App.Generator.prototype = {
 }
 
 App.Utils = function(){}
+
 App.Utils.prototype = {
     randRange:function(min, max){
 	return (Math.floor(Math.random() * (max - min + 1)) + min);
     }
 }
 
-App.Trend = function(container, width, height){
+App.Trend = function(etherDelegate, container, outerContainer){
     this._paper = null;    
     this._points = [];
+    this._etherDelegate = etherDelegate;    
     this._container = container;
+    this._outerContainer = outerContainer
     this.utils = new App.Utils();
-    this._init(width, height);
+    this._init();
 }
 
-App.Trend.prototype = {
-    
-    _init:function(width, height){
-	this._paper = Raphael(this._container.getAttribute("id"), width, height);
-	var x = 0
-	for(var i=0;i<100;i++){
-	    x += (i + this.utils.randRange(1, 10));
-	    this.addPoint(x, this.utils.randRange(10, height-50));
-	}
+App.Trend.prototype = {   
+    _init:function(){
+	var pos = dojo.position(this._outerContainer);
+	this._paper = Raphael(this._container.getAttribute("id"), Math.round(pos.w), Math.round(pos.h));
     },
-
+                                                                           
     addPoint:function(x, y){
+	console.log('adding point: ' + x + ", " + y);
 	this._points.push({x:x,y:y});
     },
 
-    generatePoint:function(){
-	return;
-	var pp = this._points[this._points.length -1];
-	var x = (pp.x + this.utils.randRange(1, 10));
+    generatePoint:function(time){
+	var x = this._etherDelegate.dateToPixelOffset(time);
 	var y =  this.utils.randRange(10, this._paper.height-50);
-	
+
 	this.addPoint(x, y);
 	
 	var len = this._points.length;
-	var p1 = this._points[len-2];
-	var p2 = this._points[len-1];	    
-	var path = "M" + p1.x + " " + p1.y + " L" + p2.x + " " + p2.y;
-	var c = this._paper.circle(p.x, p.y, 10);
+
+	var point = null;
+	var prevPoint = null;
+	if(len > 1){
+	    prevPoint = this._points[len-2];
+	}
+
+	point = this._points[len-1];
+
+	if(prevPoint){
+	    var path = "M" + prevPoint.x + " " + prevPoint.y + " L" + point.x + " " + point.y;
+	}
+			
+	var c = this._paper.circle(point.x, point.y, 10);
 	c.attr("fill", "#000");
 	c.attr("stroke", "#fff");
 	c.attr("stroke-width", 3);
-	var t = this._paper.text(p.x, p.y, i);
+	var t = this._paper.text(point.x, point.y, len);
 	t.attr("fill", "#fff");
 
 	// update the width of the container and the paper to account for new points
-	//this._paper.width += 20;	
-	//var cwidth = dojo.style(this._container, "width");
+	//this._paper.setSize(this._paper.width += 20, this._paper.height);	
+	
+	//var cwidth = dojo.style(this._container, "width");	
 	//dojo.style(this._container, "width", cwidth+20 + "px");
+
     },
 
     paint:function(){
-	console.log('painting');
 	var len = this._points.length;
 	
 	// edges
@@ -397,15 +432,4 @@ App.Trend.prototype = {
 	    t.attr("fill", "#fff");
 	}
     }   
-}
-
-App.Trend2 = function(eventSource, containerId, width, height){
-    this._eventSource = eventSource;
-    this._paper = Raphael(containerId, width, height);
-}
-
-App.Trend2.prototype = {
-    update:function(){
-	console.log(this._eventSource);
-    }
 }
