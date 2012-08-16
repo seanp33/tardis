@@ -1,21 +1,50 @@
-body{    
-    background-color:#f7f7f7;
+body {
+    background-color: #f7f7f7;
 }
 
-#control-bar{
-    margin:15px 0px 15px 0px;
+#control-bar {
+    margin: 15px 0px 15px 0px;
 }
 
-.tardis{
-    background-color:#f9f9f9;
-    margin:0px 20px 5px 20px;
+.tardis {
+    background-color: #f9f9f9;
+    margin: 0px 20px 5px 20px;
     -moz-box-shadow: 1px 1px 1px #c0c0c0;
     -webkit-box-shadow: 1px 1px 1px #c0c0c0;
-    box-shadow: 1px 1px 1px #c0c0c0;    
+    box-shadow: 1px 1px 1px #c0c0c0;
     height: 300px;
     border: 1px solid #c0c0c0;
 }
 
-.timeline-event-icon{
-    margin-left:-5px;
+.timeline-event-icon {
+    margin-left: -5px;
+}
+
+.svgBase {
+    position: absolute;
+    overflow: hidden;
+}
+
+.area {
+  fill: lightsteelblue;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.dot {
+  fill: white;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.tracker {
+    border-color: red;
+    border-style: solid;
+    border-width: 1px;
+    position: absolute;
+    overflow: hidden;
 }
