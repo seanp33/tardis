@@ -61,7 +61,7 @@ App.Tardis = function(id, container) {
     this.durationEvents = [];
     this._configureBands(this.container);
     this.generator = new App.Generator(this);
-    this.trendLayer = null;
+    this.count = 0;
 }
 
 App.Tardis.prototype = {
@@ -131,7 +131,7 @@ App.Tardis.prototype = {
     },
 
     layout:function() {
-        //this.timeline.layout();
+        this.timeline.layout();
     },
 
     destroy:function() {
@@ -176,11 +176,11 @@ App.Tardis.prototype = {
 
     addDecorator:function() {
 
-        return;
-
         var d = null;
         if (this._lastDecorator != undefined) {
-            d = new App.Trend({endDate:new Date(), startDate:this._lastDecorator._endDate});
+            this.count += 1;
+            var style = (this.count % 2 == 0) ? "trackerA" : "trackerB";
+            d = new App.Trend({endDate:new Date(), startDate:this._lastDecorator._endDate, style:style});
         } else {
             d = new App.Trend({endDate:new Date()});
         }
@@ -195,15 +195,10 @@ App.Tardis.prototype = {
     _initializePrimaryBand:function(){
         this.b0 = this.timeline._bands[0];
         this.b0.addOnScrollListener(this._handleOnScroll);
-        this.trendLayer = this.b0.createLayerDiv(10);
-        this.trendLayer.className = "trendLayer";
-        this.trendLayer.innerHTML = "<h1>trendLayer</h1>";
-        this.b0.trendLayer = this.trendLayer;
+
     },
 
     _handleOnScroll:function(band){
-        band.trendLayer.style.left = band.getViewOffset() + "px";
-        band.trendLayer.style.width = band.getTotalViewLength() + "px";
         //console.log('handling onscroll for band: ' + band.getViewOffset());
     }
 }
@@ -213,6 +208,7 @@ App.Trend = function(params) {
     this._zIndex = (params.inFront != null && params.inFront) ? 113 : 10;
     this._startDate = params.startDate || null;
     this._endDate = params.endDate;
+    this._style = params.style;
     this._timeline = null;
     this._band = null;
     this._layerDiv = null;
@@ -294,7 +290,7 @@ App.Trend.prototype._paintPoint = function(maxDate) {
 
     var doc = this._timeline.getDocument();
     var trackerA = doc.createElement("div");
-    trackerA.className = "tracker";
+    trackerA.className = this._style;
     trackerA.style.left = left;
     trackerA.style.width = width;
     trackerA.style.height = "100%";
