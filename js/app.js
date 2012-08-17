@@ -61,12 +61,12 @@ App.Tardis = function(id, container) {
     this.durationEvents = [];
     this._configureBands(this.container);
     this.generator = new App.Generator(this);
+    this.trendLayer = null;
 }
 
 App.Tardis.prototype = {
 
     _configureBands:function() {
-
         var theme = Timeline.ClassicTheme.create();
         theme.event.bubble.width = 250;
         theme.event.tape.height = 10;
@@ -98,7 +98,8 @@ App.Tardis.prototype = {
         bandInfos[1].syncWith = 0;
         bandInfos[1].highlight = true;
         this.timeline = Timeline.create(this.container, bandInfos, Timeline.HORIZONTAL);
-        this.b0 = this.timeline._bands[0];
+        this._initializePrimaryBand();
+
     },
 
     chase:function(chaseInterval) {
@@ -130,7 +131,7 @@ App.Tardis.prototype = {
     },
 
     layout:function() {
-        this.timeline.layout();
+        //this.timeline.layout();
     },
 
     destroy:function() {
@@ -174,6 +175,9 @@ App.Tardis.prototype = {
     },
 
     addDecorator:function() {
+
+        return;
+
         var d = null;
         if (this._lastDecorator != undefined) {
             d = new App.Trend({endDate:new Date(), startDate:this._lastDecorator._endDate});
@@ -186,6 +190,21 @@ App.Tardis.prototype = {
         this.b0._decorators.push(d);
 
         //var d2 = new Timeline.PointHighlightDecorator({date:new Date(), color:'#fff000'});
+    },
+
+    _initializePrimaryBand:function(){
+        this.b0 = this.timeline._bands[0];
+        this.b0.addOnScrollListener(this._handleOnScroll);
+        this.trendLayer = this.b0.createLayerDiv(10);
+        this.trendLayer.className = "trendLayer";
+        this.trendLayer.innerHTML = "<h1>trendLayer</h1>";
+        this.b0.trendLayer = this.trendLayer;
+    },
+
+    _handleOnScroll:function(band){
+        band.trendLayer.style.left = band.getViewOffset() + "px";
+        band.trendLayer.style.width = band.getTotalViewLength() + "px";
+        //console.log('handling onscroll for band: ' + band.getViewOffset());
     }
 }
 
@@ -223,8 +242,8 @@ App.Trend.prototype.paint = function() {
 
     // paint point
     maxDate = this._unit.earlier(maxDate, this._endDate);
-    //this._paintPoint(maxDate);
-    this._paintSvgPoint(maxDate);
+    this._paintPoint(maxDate);
+    //this._paintSvgPoint(maxDate);
 
     // paint trend
     if (this._startDate != null) {
@@ -285,10 +304,6 @@ App.Trend.prototype._paintPoint = function(maxDate) {
 App.Trend.prototype._paintTrend = function(minDate) {
 }
 
-App.Trend.prototype._finalizeLayerDiv = function() {
-    this._layerDiv.style.display = "block";
-}
-
 App.Trend.prototype._prepareLayerDiv = function() {
     if (this._layerDiv != null) {
         this._band.removeLayerDiv(this._layerDiv);
@@ -297,6 +312,10 @@ App.Trend.prototype._prepareLayerDiv = function() {
     this._layerDiv = this._band.createLayerDiv(this._zIndex);
     this._layerDiv.setAttribute("name", "tardis-trend-decorator"); // for debugging
     this._layerDiv.style.display = "none";
+}
+
+App.Trend.prototype._finalizeLayerDiv = function() {
+    this._layerDiv.style.display = "block";
 }
 
 App.Trend.prototype._isValid = function(minDate, maxDate) {

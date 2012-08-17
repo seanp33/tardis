@@ -1,5 +1,6 @@
 body {
     background-color: #f7f7f7;
+
 }
 
 #control-bar {
@@ -47,4 +48,12 @@ body {
     border-width: 1px;
     position: absolute;
     overflow: hidden;
+}
+
+.trendLayer{
+    background-image:url('../images/hextile1.jpeg');
+    background-repeat:repeat;
+    position: absolute;
+    overflow: hidden;
+    width:100%;
 }
