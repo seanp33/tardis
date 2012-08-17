@@ -134,6 +134,10 @@ App.Tardis.prototype = {
         this.timeline.layout();
     },
 
+    paint:function(){
+        this.timeline.paint();
+    },
+
     destroy:function() {
         this.stop();
         console.log("Tardis <" + this.id + "> destroyed");
@@ -150,7 +154,7 @@ App.Tardis.prototype = {
 
         this.addDecorator();
 
-        this.layout();
+        this.paint();
     },
 
     expireDurationEvents:function(date) {
@@ -176,6 +180,7 @@ App.Tardis.prototype = {
 
     addDecorator:function() {
 
+        /*
         var d = null;
         if (this._lastDecorator != undefined) {
             this.count += 1;
@@ -185,17 +190,17 @@ App.Tardis.prototype = {
             d = new App.Trend({endDate:new Date()});
         }
         this._lastDecorator = d;
-
+        */
+        var d = new Timeline.PointHighlightDecorator({date:new Date(), color:'#fff000'});
         d.initialize(this.b0, this.timeline);
         this.b0._decorators.push(d);
 
-        //var d2 = new Timeline.PointHighlightDecorator({date:new Date(), color:'#fff000'});
+
     },
 
     _initializePrimaryBand:function(){
         this.b0 = this.timeline._bands[0];
         this.b0.addOnScrollListener(this._handleOnScroll);
-
     },
 
     _handleOnScroll:function(band){
@@ -217,6 +222,7 @@ App.Trend = function(params) {
 App.Trend.prototype.initialize = function(band, timeline) {
     this._band = band;
     this._timeline = timeline;
+    this._index = this._band._decorators.length;
 }
 
 App.Trend.prototype.softPaint = function() {
@@ -250,33 +256,6 @@ App.Trend.prototype.paint = function() {
     this._finalizeLayerDiv();
 }
 
-App.Trend.prototype._paintSvgPoint = function(maxDate) {
-    var endPixel = this._band.dateToPixelOffset(this._endDate);
-    var width = "1px";
-    var left = endPixel + "px";
-
-    if (this._startDate != null) {
-        var startPixel = this._band.dateToPixelOffset(this._startDate);
-        width = endPixel - startPixel + "px";
-        left = startPixel + "px";
-    }
-
-    var doc = this._timeline.getDocument();
-    var svgContainer = doc.createElement("div");
-    var svg = d3.select(svgContainer).append("svg")
-        .attr("class", "svgBack")
-        .attr("left", left)
-        .attr("width", width)
-        .attr("height", "100%")
-       .append("circle")
-        .attr("class", "dot")
-        .attr("cx", endPixel)
-        .attr("cy", 30)
-        .attr("r", 3.5);
-
-    this._layerDiv.appendChild(svgContainer);
-}
-
 App.Trend.prototype._paintPoint = function(maxDate) {
     var endPixel = this._band.dateToPixelOffset(this._endDate);
     var width = "1px";
@@ -294,6 +273,7 @@ App.Trend.prototype._paintPoint = function(maxDate) {
     trackerA.style.left = left;
     trackerA.style.width = width;
     trackerA.style.height = "100%";
+    trackerA.innerHTML = "<h1>" + this._index + "</h1>";
     this._layerDiv.appendChild(trackerA);
 }
 
