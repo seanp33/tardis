@@ -180,21 +180,19 @@ App.Tardis.prototype = {
 
     addDecorator:function() {
 
-        var d = null;
-        if (this._lastDecorator != undefined) {
+        if (this._lastDecorator == undefined) {
             this.count += 1;
             var style = (this.count % 2 == 0) ? "trackerA" : "trackerB";
-            d = new App.Trend({endDate:new Date(), startDate:this._lastDecorator._endDate, cssClass:style});
+            this._lastDecorator = new App.Trend({startDate:new Date(), endDate:new Date(), cssClass:style});
+            this._lastDecorator.initialize(this.b0, this.timeline);
+            this.b0._decorators.push(this._lastDecorator);
         } else {
-            d = new App.Trend({endDate:new Date()});
+            // calculate width
+            this._lastDecorator._endDate = new Date()
+            this._lastDecorator.paint();
+            console.log("width: " + this._lastDecorator.div.style.width);
         }
-        this._lastDecorator = d;
 
-
-        //var d = new Timeline.PointHighlightDecorator({date:new Date(), color:'#fff000', width:30});
-
-        d.initialize(this.b0, this.timeline);
-        this.b0._decorators.push(d);
     },
 
     _initializePrimaryBand:function() {
@@ -239,12 +237,11 @@ App.Trend.prototype.paint = function() {
         this._unit.compare(this._endDate, minDate) > 0) {
 
         var doc = this._timeline.getDocument();
-        var div = doc.createElement("div");
-        //div.className = 'timeline-highlight-point-decorator';
-        div.className = this._cssClass;
-        div.innerHTML = "<h2 style='margin-top:200px'>" + this._index + "</h2>";
+        this.div = doc.createElement("div");
+        this.div.className = this._cssClass;
+        this.div.innerHTML = "<h2 style='margin-top:200px'>" + this._index + "</h2>";
 
-        this._layerDiv.appendChild(div);
+        this._layerDiv.appendChild(this.div);
 
         var endPixel = this._band.dateToPixelOffset(this._endDate);
         var width = "3px";
@@ -256,8 +253,8 @@ App.Trend.prototype.paint = function() {
             left = startPixel + "px";
         }
 
-        div.style.left = left;
-        div.style.width = width;
+        this.div.style.left = left;
+        this.div.style.width = width;
 
     }
     this._layerDiv.style.display = "block";
