@@ -134,7 +134,7 @@ App.Tardis.prototype = {
         this.timeline.layout();
     },
 
-    paint:function(){
+    paint:function() {
         this.timeline.paint();
     },
 
@@ -180,128 +180,91 @@ App.Tardis.prototype = {
 
     addDecorator:function() {
 
-        /*
         var d = null;
         if (this._lastDecorator != undefined) {
             this.count += 1;
             var style = (this.count % 2 == 0) ? "trackerA" : "trackerB";
-            d = new App.Trend({endDate:new Date(), startDate:this._lastDecorator._endDate, style:style});
+            d = new App.Trend({endDate:new Date(), startDate:this._lastDecorator._endDate, cssClass:style});
         } else {
             d = new App.Trend({endDate:new Date()});
         }
         this._lastDecorator = d;
-        */
-        var d = new Timeline.PointHighlightDecorator({date:new Date(), color:'#fff000'});
+
+
+        //var d = new Timeline.PointHighlightDecorator({date:new Date(), color:'#fff000', width:30});
+
         d.initialize(this.b0, this.timeline);
         this.b0._decorators.push(d);
-
-
     },
 
-    _initializePrimaryBand:function(){
+    _initializePrimaryBand:function() {
         this.b0 = this.timeline._bands[0];
         this.b0.addOnScrollListener(this._handleOnScroll);
     },
 
-    _handleOnScroll:function(band){
+    _handleOnScroll:function(band) {
         //console.log('handling onscroll for band: ' + band.getViewOffset());
     }
 }
 
 App.Trend = function(params) {
     this._unit = params.unit != null ? params.unit : SimileAjax.NativeDateUnit;
-    this._zIndex = (params.inFront != null && params.inFront) ? 113 : 10;
     this._startDate = params.startDate || null;
     this._endDate = params.endDate;
-    this._style = params.style;
-    this._timeline = null;
-    this._band = null;
-    this._layerDiv = null;
-}
+    this._width = params.width != null ? params.width : 10;
+    this._color = params.color;
+    this._cssClass = params.cssClass != null ? params.cssClass : '';
+    this._opacity = params.opacity != null ? params.opacity : 100;
+};
 
 App.Trend.prototype.initialize = function(band, timeline) {
     this._band = band;
     this._timeline = timeline;
+    this._layerDiv = null;
     this._index = this._band._decorators.length;
-}
-
-App.Trend.prototype.softPaint = function() {
-    //empty
-}
+};
 
 App.Trend.prototype.paint = function() {
-
-    // validate range
-    var minDate = this._band.getMinDate();
-    var maxDate = this._band.getMaxDate();
-
-    if (!this._isValid(minDate, maxDate)) {
-        throw new Error('could not validate decorator');
-    }
-
-    // prep surface
-    this._prepareLayerDiv();
-
-    // paint point
-    maxDate = this._unit.earlier(maxDate, this._endDate);
-    this._paintPoint(maxDate);
-    //this._paintSvgPoint(maxDate);
-
-    // paint trend
-    if (this._startDate != null) {
-        minDate = this._unit.later(minDate, this._startDate);
-        this._paintTrend();
-    }
-
-    this._finalizeLayerDiv();
-}
-
-App.Trend.prototype._paintPoint = function(maxDate) {
-    var endPixel = this._band.dateToPixelOffset(this._endDate);
-    var width = "1px";
-    var left = endPixel + "px";
-
-    if (this._startDate != null) {
-        var startPixel = this._band.dateToPixelOffset(this._startDate);
-        width = endPixel - startPixel + "px";
-        left = startPixel + "px";
-    }
-
-    var doc = this._timeline.getDocument();
-    var trackerA = doc.createElement("div");
-    trackerA.className = this._style;
-    trackerA.style.left = left;
-    trackerA.style.width = width;
-    trackerA.style.height = "100%";
-    trackerA.innerHTML = "<h1>" + this._index + "</h1>";
-    this._layerDiv.appendChild(trackerA);
-}
-
-App.Trend.prototype._paintTrend = function(minDate) {
-}
-
-App.Trend.prototype._prepareLayerDiv = function() {
     if (this._layerDiv != null) {
         this._band.removeLayerDiv(this._layerDiv);
     }
-
-    this._layerDiv = this._band.createLayerDiv(this._zIndex);
-    this._layerDiv.setAttribute("name", "tardis-trend-decorator"); // for debugging
+    this._layerDiv = this._band.createLayerDiv(10);
+    this._layerDiv.setAttribute("name", "span-highlight-decorator"); // for debugging
     this._layerDiv.style.display = "none";
-}
 
-App.Trend.prototype._finalizeLayerDiv = function() {
-    this._layerDiv.style.display = "block";
-}
+    var minDate = this._band.getMinDate();
+    var maxDate = this._band.getMaxDate();
 
-App.Trend.prototype._isValid = function(minDate, maxDate) {
-    if ((this._startDate != null && this._unit.compare(this._startDate, maxDate) > 0 ) ||
-        this._unit.compare(this._endDate, minDate) < 0) {
-        return false;
+    if (this._unit.compare(this._endDate, maxDate) < 0 &&
+        this._unit.compare(this._endDate, minDate) > 0) {
+
+        var doc = this._timeline.getDocument();
+        var div = doc.createElement("div");
+        //div.className = 'timeline-highlight-point-decorator';
+        div.className = this._cssClass;
+        div.innerHTML = "<h2 style='margin-top:200px'>" + this._index + "</h2>";
+
+        this._layerDiv.appendChild(div);
+
+        var endPixel = this._band.dateToPixelOffset(this._endDate);
+        var width = "3px";
+        var left = endPixel + "px";
+
+        if (this._startDate != null) {
+            var startPixel = this._band.dateToPixelOffset(this._startDate);
+            width = endPixel - startPixel + "px";
+            left = startPixel + "px";
+        }
+
+        div.style.left = left;
+        div.style.width = width;
+
     }
+    this._layerDiv.style.display = "block";
+};
 
-    return true;
-}
+App.Trend.prototype.softPaint = function() {
+};
 
 
 App.Generator = function(tardis) {

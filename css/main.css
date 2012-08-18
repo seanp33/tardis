@@ -27,37 +27,45 @@ body {
 }
 
 .area {
-  fill: lightsteelblue;
+    fill: lightsteelblue;
 }
 
 .line {
-  fill: none;
-  stroke: steelblue;
-  stroke-width: 1.5px;
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 1.5px;
 }
 
 .dot {
-  fill: white;
-  stroke: steelblue;
-  stroke-width: 1.5px;
+    fill: white;
+    stroke: steelblue;
+    stroke-width: 1.5px;
 }
 
 .trackerA {
-    background-color: red;
     position: absolute;
     overflow: hidden;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    left: 0;
+    background-color: red;
 }
 
 .trackerB {
-    background-color: blue;
     position: absolute;
     overflow: hidden;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    left: 0;
+    background-color: white;
 }
 
-.trendLayer{
-    background-image:url('../images/hextile1.jpeg');
-    background-repeat:repeat;
+.trendLayer {
+    background-image: url('../images/hextile1.jpeg');
+    background-repeat: repeat;
     position: absolute;
     overflow: hidden;
-    width:100%;
+    width: 100%;
 }
