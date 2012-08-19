@@ -42,7 +42,7 @@ body {
     stroke-width: 1.5px;
 }
 
-.trackerA {
+.trendDecorator {
     position: absolute;
     overflow: hidden;
     top: 0;
@@ -50,22 +50,9 @@ body {
     width: 100%;
     left: 0;
     background-color: red;
+    text-align: right;
 }
 
-.trackerB {
-    position: absolute;
-    overflow: hidden;
-    top: 0;
-    height: 100%;
-    width: 100%;
-    left: 0;
-    background-color: white;
-}
-
-.trendLayer {
-    background-image: url('../images/hextile1.jpeg');
-    background-repeat: repeat;
-    position: absolute;
-    overflow: hidden;
-    width: 100%;
+.trendDecoratorSvg{
+    fill:green;
 }

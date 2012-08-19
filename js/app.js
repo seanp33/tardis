@@ -62,6 +62,7 @@ App.Tardis = function(id, container) {
     this._configureBands(this.container);
     this.generator = new App.Generator(this);
     this.count = 0;
+    this.trendDecorator = null;
 }
 
 App.Tardis.prototype = {
@@ -152,7 +153,7 @@ App.Tardis.prototype = {
         this.eventSource._events.add(data);
         this.eventSource._fire("onAddMany", []);
 
-        this.addDecorator();
+        this.updateDecorator();
 
         this.paint();
     },
@@ -178,21 +179,15 @@ App.Tardis.prototype = {
         this.durationEvents = maintained;
     },
 
-    addDecorator:function() {
+    updateDecorator:function() {
 
-        if (this._lastDecorator == undefined) {
-            this.count += 1;
-            var style = (this.count % 2 == 0) ? "trackerA" : "trackerB";
-            this._lastDecorator = new App.Trend({startDate:new Date(), endDate:new Date(), cssClass:style});
-            this._lastDecorator.initialize(this.b0, this.timeline);
-            this.b0._decorators.push(this._lastDecorator);
+        if (this.trendDecorator == null) {
+            this.trendDecorator = new App.Trend({startDate:new Date(), endDate:new Date()});
+            this.trendDecorator.initialize(this.b0, this.timeline);
+            this.b0._decorators.push(this.trendDecorator);
         } else {
-            // calculate width
-            this._lastDecorator._endDate = new Date()
-            this._lastDecorator.paint();
-            console.log("width: " + this._lastDecorator.div.style.width);
+            this.trendDecorator.update(new Date());
         }
-
     },
 
     _initializePrimaryBand:function() {
@@ -209,55 +204,72 @@ App.Trend = function(params) {
     this._unit = params.unit != null ? params.unit : SimileAjax.NativeDateUnit;
     this._startDate = params.startDate || null;
     this._endDate = params.endDate;
-    this._width = params.width != null ? params.width : 10;
-    this._color = params.color;
-    this._cssClass = params.cssClass != null ? params.cssClass : '';
-    this._opacity = params.opacity != null ? params.opacity : 100;
+    this._cssClass = 'trendDecorator';
 };
 
 App.Trend.prototype.initialize = function(band, timeline) {
     this._band = band;
     this._timeline = timeline;
     this._layerDiv = null;
-    this._index = this._band._decorators.length;
+    this._svg = null;
 };
 
+App.Trend.prototype.update = function(date) {
+    this._endDate = date;
+    this.paint();
+}
+
 App.Trend.prototype.paint = function() {
+
     if (this._layerDiv != null) {
         this._band.removeLayerDiv(this._layerDiv);
     }
+
     this._layerDiv = this._band.createLayerDiv(10);
     this._layerDiv.setAttribute("name", "span-highlight-decorator"); // for debugging
     this._layerDiv.style.display = "none";
 
-    var minDate = this._band.getMinDate();
-    var maxDate = this._band.getMaxDate();
-
-    if (this._unit.compare(this._endDate, maxDate) < 0 &&
-        this._unit.compare(this._endDate, minDate) > 0) {
-
+    if (this._isValid(this._band.getMinDate(), this._band.getMaxDate())) {
         var doc = this._timeline.getDocument();
         this.div = doc.createElement("div");
         this.div.className = this._cssClass;
-        this.div.innerHTML = "<h2 style='margin-top:200px'>" + this._index + "</h2>";
+        this.div.innerHTML = "<h2 style='margin-top:200px'>trendDecorator</h2>";
 
         this._layerDiv.appendChild(this.div);
 
-        var endPixel = this._band.dateToPixelOffset(this._endDate);
-        var width = "3px";
-        var left = endPixel + "px";
-
-        if (this._startDate != null) {
-            var startPixel = this._band.dateToPixelOffset(this._startDate);
-            width = endPixel - startPixel + "px";
-            left = startPixel + "px";
-        }
-
-        this.div.style.left = left;
-        this.div.style.width = width;
-
+        this._updatePositionAndWidth();
+    } else {
+        throw new Error("mon and max date are not valid!");
     }
+
     this._layerDiv.style.display = "block";
+};
+
+App.Trend.prototype._isValid = function(minDate, maxDate) {
+    if (this._unit.compare(this._endDate, maxDate) < 0 &&
+        this._unit.compare(this._endDate, minDate) > 0) {
+        return true;
+    } else {
+        return false;
+    }
+};
+
+App.Trend.prototype._initLayerDiv = function() {
+};
+
+App.Trend.prototype._updatePositionAndWidth = function() {
+    var endPixel = this._band.dateToPixelOffset(this._endDate);
+    var width = "3px";
+    var left = endPixel + "px";
+
+    if (this._startDate != null) {
+        var startPixel = this._band.dateToPixelOffset(this._startDate);
+        width = endPixel - startPixel + "px";
+        left = startPixel + "px";
+    }
+
+    this.div.style.left = left;
+    this.div.style.width = width;
 };
 
 App.Trend.prototype.softPaint = function() {
