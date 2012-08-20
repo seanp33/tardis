@@ -244,10 +244,12 @@ App.Trend.prototype._initLayerDiv = function() {
         this._layerDiv = this._band.createLayerDiv(10);
         this._layerDiv.setAttribute("name", "span-highlight-decorator"); // for debugging
         this._layerDiv.style.display = "none";
+
         var doc = this._timeline.getDocument();
         this.div = doc.createElement("div");
         this.div.className = this._cssClass;
         this.div.innerHTML = "<h2 style='margin-top:200px'>trendDecorator</h2>";
+
         this._layerDiv.appendChild(this.div);
 
         this._svgBase = d3.select(this._layerDiv).append("svg")
@@ -255,9 +257,8 @@ App.Trend.prototype._initLayerDiv = function() {
             .attr("height", "100%")
             .attr("width", 100)
             .classed("trendDecoratorSvg", true);
-
     } else {
-        throw new Error("mon and max date are not valid!");
+        throw new Error("min and/or max date are not valid. unable to initialize App.Trend layer div");
     }
 };
 
