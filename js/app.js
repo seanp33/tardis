@@ -211,7 +211,7 @@ App.Trend.prototype.initialize = function(band, timeline) {
     this._band = band;
     this._timeline = timeline;
     this._layerDiv = null;
-    this._svg = null;
+    this._svgBase = null;
 };
 
 App.Trend.prototype.update = function(date) {
@@ -221,26 +221,11 @@ App.Trend.prototype.update = function(date) {
 
 App.Trend.prototype.paint = function() {
 
-    if (this._layerDiv != null) {
-        this._band.removeLayerDiv(this._layerDiv);
+    if (this._layerDiv == null) {
+        this._initLayerDiv();
     }
 
-    this._layerDiv = this._band.createLayerDiv(10);
-    this._layerDiv.setAttribute("name", "span-highlight-decorator"); // for debugging
-    this._layerDiv.style.display = "none";
-
-    if (this._isValid(this._band.getMinDate(), this._band.getMaxDate())) {
-        var doc = this._timeline.getDocument();
-        this.div = doc.createElement("div");
-        this.div.className = this._cssClass;
-        this.div.innerHTML = "<h2 style='margin-top:200px'>trendDecorator</h2>";
-
-        this._layerDiv.appendChild(this.div);
-
-        this._updatePositionAndWidth();
-    } else {
-        throw new Error("mon and max date are not valid!");
-    }
+    this._updatePositionAndWidth();
 
     this._layerDiv.style.display = "block";
 };
@@ -255,6 +240,25 @@ App.Trend.prototype._isValid = function(minDate, maxDate) {
 };
 
 App.Trend.prototype._initLayerDiv = function() {
+    if (this._isValid(this._band.getMinDate(), this._band.getMaxDate())) {
+        this._layerDiv = this._band.createLayerDiv(10);
+        this._layerDiv.setAttribute("name", "span-highlight-decorator"); // for debugging
+        this._layerDiv.style.display = "none";
+        var doc = this._timeline.getDocument();
+        this.div = doc.createElement("div");
+        this.div.className = this._cssClass;
+        this.div.innerHTML = "<h2 style='margin-top:200px'>trendDecorator</h2>";
+        this._layerDiv.appendChild(this.div);
+
+        this._svgBase = d3.select(this._layerDiv).append("svg")
+            .append("rect")
+            .attr("height", "100%")
+            .attr("width", 100)
+            .classed("trendDecoratorSvg", true);
+
+    } else {
+        throw new Error("mon and max date are not valid!");
+    }
 };
 
 App.Trend.prototype._updatePositionAndWidth = function() {
@@ -270,6 +274,8 @@ App.Trend.prototype._updatePositionAndWidth = function() {
 
     this.div.style.left = left;
     this.div.style.width = width;
+
+    this._svgBase.attr("x", left).attr("width", width);
 };
 
 App.Trend.prototype.softPaint = function() {

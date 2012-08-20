@@ -49,10 +49,10 @@ body {
     height: 100%;
     width: 100%;
     left: 0;
-    background-color: red;
+
     text-align: right;
 }
 
 .trendDecoratorSvg{
-    fill:green;
+    fill:blue;
 }
