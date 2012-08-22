@@ -26,20 +26,26 @@ body {
     overflow: hidden;
 }
 
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
 .area {
-    fill: lightsteelblue;
+  fill: lightsteelblue;
 }
 
 .line {
-    fill: none;
-    stroke: steelblue;
-    stroke-width: 1.5px;
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
 }
 
 .dot {
-    fill: white;
-    stroke: steelblue;
-    stroke-width: 1.5px;
+  fill: white;
+  stroke: steelblue;
+  stroke-width: 1.5px;
 }
 
 .trendDecorator {
@@ -49,10 +55,5 @@ body {
     height: 100%;
     width: 100%;
     left: 0;
-
     text-align: right;
-}
-
-.trendDecoratorSvg{
-    fill:blue;
 }

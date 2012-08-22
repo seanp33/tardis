@@ -59,6 +59,7 @@ App.Tardis = function(id, container) {
     this.eventSource = new Timeline.DefaultEventSource();
     this.timeline = null;
     this.durationEvents = [];
+    this._util = new App.Util();
     this._configureBands(this.container);
     this.generator = new App.Generator(this);
     this.count = 0;
@@ -186,7 +187,7 @@ App.Tardis.prototype = {
             this.trendDecorator.initialize(this.b0, this.timeline);
             this.b0._decorators.push(this.trendDecorator);
         } else {
-            this.trendDecorator.update(new Date());
+            this.trendDecorator.update(new Date(), this._util.randRange(100,500));
         }
     },
 
@@ -205,22 +206,23 @@ App.Trend = function(params) {
     this._startDate = params.startDate || null;
     this._endDate = params.endDate;
     this._cssClass = 'trendDecorator';
+    this._layerDiv = null;
+    this._svg = null;
+    this._data = [];
 };
 
 App.Trend.prototype.initialize = function(band, timeline) {
     this._band = band;
     this._timeline = timeline;
-    this._layerDiv = null;
-    this._svgBase = null;
 };
 
-App.Trend.prototype.update = function(date) {
+App.Trend.prototype.update = function(date, value) {
     this._endDate = date;
+    this._data.push({date:this._band.dateToPixelOffset(date), y:value});
     this.paint();
 }
 
 App.Trend.prototype.paint = function() {
-
     if (this._layerDiv == null) {
         this._initLayerDiv();
     }
@@ -248,15 +250,12 @@ App.Trend.prototype._initLayerDiv = function() {
         var doc = this._timeline.getDocument();
         this.div = doc.createElement("div");
         this.div.className = this._cssClass;
-        this.div.innerHTML = "<h2 style='margin-top:200px'>trendDecorator</h2>";
-
         this._layerDiv.appendChild(this.div);
 
-        this._svgBase = d3.select(this._layerDiv).append("svg")
-            .append("rect")
+        this._svg = d3.select(this.div).append("svg")
+            .datum(this._data)
             .attr("height", "100%")
-            .attr("width", 100)
-            .classed("trendDecoratorSvg", true);
+            .attr("width", "100%"); // initial width of 100
     } else {
         throw new Error("min and/or max date are not valid. unable to initialize App.Trend layer div");
     }
@@ -269,15 +268,68 @@ App.Trend.prototype._updatePositionAndWidth = function() {
 
     if (this._startDate != null) {
         var startPixel = this._band.dateToPixelOffset(this._startDate);
-        width = endPixel - startPixel + "px";
-        left = startPixel + "px";
+        width = endPixel - startPixel;
+        left = startPixel;
     }
 
-    this.div.style.left = left;
-    this.div.style.width = width;
+    this.div.style.left = left + "px";
+    this.div.style.width = width + "px";
 
-    this._svgBase.attr("x", left).attr("width", width);
+    this._svg.attr("x", left + "px").attr("width", width + "px");
+
+    this._updateChart(width, 500);
 };
+
+App.Trend.prototype._updateChart = function(width, height) {
+    console.log("_updateChart (" + width + "," + height + ")");
+
+    this._svg.selectAll(".line").remove();
+    this._svg.selectAll(".area").remove();
+    this._svg.selectAll(".dot").remove();
+
+    var x = this._getXFunctor(width);
+    var y = this._getYFunctor(height);
+
+    console.log("this._data.length: " + this._data.length);
+
+    var line = d3.svg.line()
+        .x(function(d) {return x(d.x);})
+        .y(function(d) {return y(d.y);});
+
+    var area = d3.svg.area()
+        .x(line.x())
+        .y1(line.y())
+        .y0(y(0));
+
+    this._svg.append("path")
+    .attr("class", "area")
+    .attr("d", area);
+
+
+    this._svg.append("path")
+    .attr("class", "line")
+    .attr("d", line);
+
+    this._svg.selectAll(".dot")
+    .data(this._data.filter(function(d) {return d.y; }))
+    .enter().append("circle")
+    .attr("class", "dot")
+    .attr("cx", line.x())
+    .attr("cy", line.y())
+    .attr("r", 3.5);
+}
+
+App.Trend.prototype._getXFunctor = function(width) {
+    return d3.time.scale()
+        .domain([0, d3.max(this._data, function(d, i){return d.x})])
+        .range([0, width]);
+}
+
+App.Trend.prototype._getYFunctor = function(height) {
+    return d3.scale.linear()
+        .domain([0, d3.max(this._data, function(d, i){return d.y})])
+        .range([height, 0]);
+}
 
 App.Trend.prototype.softPaint = function() {
 };
@@ -301,6 +353,7 @@ App.Generator = function(tardis) {
         "#__s__ exercises against the censored researcher.",
         "The birth divides #__s__.",
         "#__s__ drowns an optimum hardship."];
+    this._util = new App.Util();
 }
 
 App.Generator.icons = ["asterisk_orange.png","flag_yellow.png","lightning.png","tick.png","bomb.png","heart.png","rosette.png","bug.png","exclamation.png","help.png","star.png","eye.png","information.png","stop.png","flag_green.png","lightbulb.png","tag_blue_edit.png"];
@@ -383,6 +436,11 @@ App.Generator.prototype = {
     },
 
     _rr:function(min, max) {
-        return (Math.floor(Math.random() * (max - min + 1)) + min);
+        return this._util.randRange(min, max);
     }
+}
+
+App.Util = function(){}
+App.Util.prototype.randRange = function(min, max){
+    return (Math.floor(Math.random() * (max - min + 1)) + min);
 }
