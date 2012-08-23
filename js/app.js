@@ -218,7 +218,7 @@ App.Trend.prototype.initialize = function(band, timeline) {
 
 App.Trend.prototype.update = function(date, value) {
     this._endDate = date;
-    this._data.push({date:this._band.dateToPixelOffset(date), y:value});
+    this._data.push({date:date, value:value});
     this.paint();
 }
 
@@ -293,8 +293,8 @@ App.Trend.prototype._updateChart = function(width, height) {
     console.log("this._data.length: " + this._data.length);
 
     var line = d3.svg.line()
-        .x(function(d) {return x(d.x);})
-        .y(function(d) {return y(d.y);});
+        .x(function(d) {return x(d.date);})
+        .y(function(d) {return y(d.value);});
 
     var area = d3.svg.area()
         .x(line.x())
@@ -321,13 +321,13 @@ App.Trend.prototype._updateChart = function(width, height) {
 
 App.Trend.prototype._getXFunctor = function(width) {
     return d3.time.scale()
-        .domain([0, d3.max(this._data, function(d, i){return d.x})])
+        .domain(d3.extent(this._data, function(d, i){console.log("date: " + d.date);return d.date}))
         .range([0, width]);
 }
 
 App.Trend.prototype._getYFunctor = function(height) {
     return d3.scale.linear()
-        .domain([0, d3.max(this._data, function(d, i){return d.y})])
+        .domain([0, d3.max(this._data, function(d, i){return d.value})])
         .range([height, 0]);
 }
 
