@@ -73,7 +73,7 @@ App.Tardis.prototype = {
         theme.event.bubble.width = 250;
         theme.event.tape.height = 10;
         var date = new Date();
-        var bandInfos = [
+	var bandInfos = [
             Timeline.createBandInfo({
                 width:          "85%",
                 intervalUnit:   Timeline.DateTime.SECOND,
@@ -96,7 +96,8 @@ App.Tardis.prototype = {
                 theme:theme
             })
         ];
-
+	
+	
         bandInfos[1].syncWith = 0;
         bandInfos[1].highlight = true;
         this.timeline = Timeline.create(this.container, bandInfos, Timeline.HORIZONTAL);
@@ -187,7 +188,7 @@ App.Tardis.prototype = {
             this.trendDecorator.initialize(this.b0, this.timeline);
             this.b0._decorators.push(this.trendDecorator);
         } else {
-            this.trendDecorator.update(new Date(), this._util.randRange(100,500));
+            this.trendDecorator.update(new Date(), this._util.randRange(0,1000));
         }
     },
 
@@ -277,12 +278,10 @@ App.Trend.prototype._updatePositionAndWidth = function() {
 
     this._svg.attr("x", left + "px").attr("width", width + "px");
 
-    this._updateChart(width, 500);
+    this._updateChart(width, 257);
 };
 
 App.Trend.prototype._updateChart = function(width, height) {
-    console.log("_updateChart (" + width + "," + height + ")");
-
     this._svg.selectAll(".line").remove();
     this._svg.selectAll(".area").remove();
     this._svg.selectAll(".dot").remove();
@@ -290,28 +289,26 @@ App.Trend.prototype._updateChart = function(width, height) {
     var x = this._getXFunctor(width);
     var y = this._getYFunctor(height);
 
-    console.log("this._data.length: " + this._data.length);
-
     var line = d3.svg.line()
         .x(function(d) {return x(d.date);})
-        .y(function(d) {return y(d.value);});
+        .y(function(d) {return y(d.value);})
+	.interpolate("cardinal");
 
     var area = d3.svg.area()
         .x(line.x())
         .y1(line.y())
-        .y0(y(0));
+        .y0(y(0)).interpolate("cardinal");
 
     this._svg.append("path")
     .attr("class", "area")
     .attr("d", area);
-
 
     this._svg.append("path")
     .attr("class", "line")
     .attr("d", line);
 
     this._svg.selectAll(".dot")
-    .data(this._data.filter(function(d) {return d.y; }))
+    .data(this._data.filter(function(d) {return d.value; }))
     .enter().append("circle")
     .attr("class", "dot")
     .attr("cx", line.x())
@@ -321,14 +318,14 @@ App.Trend.prototype._updateChart = function(width, height) {
 
 App.Trend.prototype._getXFunctor = function(width) {
     return d3.time.scale()
-        .domain(d3.extent(this._data, function(d, i){console.log("date: " + d.date);return d.date}))
+        .domain(d3.extent(this._data, function(d, i){return d.date}))
         .range([0, width]);
 }
 
 App.Trend.prototype._getYFunctor = function(height) {
     return d3.scale.linear()
         .domain([0, d3.max(this._data, function(d, i){return d.value})])
-        .range([height, 0]);
+        .range([height, 10]);
 }
 
 App.Trend.prototype.softPaint = function() {
