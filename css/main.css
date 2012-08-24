@@ -44,7 +44,7 @@ body {
 }
 
 .dot1 {
-  fill: white;
+  fill: blue;
   stroke: blue;
   stroke-width: 1.5px;
 }
@@ -61,7 +61,7 @@ body {
 }
 
 .dot2 {
-  fill: white;
+  fill: orange;
   stroke: orange;
   stroke-width: 1.5px;
 }
@@ -78,7 +78,7 @@ body {
 }
 
 .dot3 {
-  fill: white;
+  fill: green;
   stroke: green;
   stroke-width: 1.5px;
 }

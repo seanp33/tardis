@@ -1,6 +1,12 @@
 function App() {
     this.tards = [];
     this.chaseInterval = 1000;
+    var self = this;
+    document.getElementById("pauseBtn").addEventListener("click", function(){
+	for(var i=0;i< self.tards.length;i++){
+	    self.tards[i].togglePause();
+	}
+    });
 }
 
 App.prototype = {
@@ -105,8 +111,15 @@ App.Tardis.prototype = {
         this._initializePrimaryBand();
 
     },
+    
+    togglePause:function(){
+	this.paused = !this.paused;
+	(this.paused) ? this.generator.stop() : this.generator.start();
+	console.log("paused? " + this.paused);
+    },
 
     chase:function(chaseInterval) {
+	if(this.paused) return;
         var now = new Date();
         this.expireDurationEvents(now);
 
@@ -306,12 +319,15 @@ App.Trend.prototype._updateChart = function(width, height) {
         .y(function(d) {
             return y(d.value);
         })
-        .interpolate("monotone");
+        .interpolate("monotone")
+	.tension(0);
 
     var area = d3.svg.area()
         .x(line.x())
         .y1(line.y())
-        .y0(y(0)).interpolate("monotone");
+        .y0(y(0))
+	.interpolate("monotone")
+	.tension(0);
 
     this._svg.append("path")
         .attr("class", this._areaClass)
@@ -329,7 +345,7 @@ App.Trend.prototype._updateChart = function(width, height) {
         .attr("class", this._dotClass)
         .attr("cx", line.x())
         .attr("cy", line.y())
-        .attr("r", 3.5);
+        .attr("r", 2);
 }
 
 App.Trend.prototype._getXFunctor = function(width) {
