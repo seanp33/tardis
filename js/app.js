@@ -313,11 +313,6 @@ App.Trend.prototype._updateChart = function(width, height) {
         .y1(line.y())
         .y0(y(0)).interpolate("monotone");
 
-    console.log(this._areaClass);
-    console.log(this._dotClass);
-    console.log(this._lineClass);
-
-
     this._svg.append("path")
         .attr("class", this._areaClass)
         .attr("d", area);
