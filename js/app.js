@@ -64,6 +64,7 @@ App.Tardis = function(id, container) {
     this.generator = new App.Generator(this);
     this.count = 0;
     this.trendDecorator = null;
+    this.trendDecorators = [];
 }
 
 App.Tardis.prototype = {
@@ -73,7 +74,7 @@ App.Tardis.prototype = {
         theme.event.bubble.width = 250;
         theme.event.tape.height = 10;
         var date = new Date();
-	var bandInfos = [
+        var bandInfos = [
             Timeline.createBandInfo({
                 width:          "85%",
                 intervalUnit:   Timeline.DateTime.SECOND,
@@ -96,8 +97,8 @@ App.Tardis.prototype = {
                 theme:theme
             })
         ];
-	
-	
+
+
         bandInfos[1].syncWith = 0;
         bandInfos[1].highlight = true;
         this.timeline = Timeline.create(this.container, bandInfos, Timeline.HORIZONTAL);
@@ -183,12 +184,18 @@ App.Tardis.prototype = {
 
     updateDecorator:function() {
 
-        if (this.trendDecorator == null) {
-            this.trendDecorator = new App.Trend({startDate:new Date(), endDate:new Date()});
-            this.trendDecorator.initialize(this.b0, this.timeline);
-            this.b0._decorators.push(this.trendDecorator);
+        if (this.trendDecorators.length < 3) {
+            var i=this.trendDecorators.length+1;
+            var td = new App.Trend({startDate:new Date(), endDate:new Date(), dotClass:"dot"+i, lineClass:"line"+i, areaClass:"area"+i});
+            td.initialize(this.b0, this.timeline);
+            this.b0._decorators.push(td);
+            this.trendDecorators.push(td);
         } else {
-            this.trendDecorator.update(new Date(), this._util.randRange(0,1000));
+            var d = new Date();
+            for (var i = 0; i < this.trendDecorators.length; i++) {
+                var td = this.trendDecorators[i];
+                td.update(d, this._util.randRange(0, 1000));
+            }
         }
     },
 
@@ -206,6 +213,9 @@ App.Trend = function(params) {
     this._unit = params.unit != null ? params.unit : SimileAjax.NativeDateUnit;
     this._startDate = params.startDate || null;
     this._endDate = params.endDate;
+    this._dotClass = params.dotClass;
+    this._lineClass = params.lineClass;
+    this._areaClass = params.areaClass;
     this._cssClass = 'trendDecorator';
     this._layerDiv = null;
     this._svg = null;
@@ -282,49 +292,64 @@ App.Trend.prototype._updatePositionAndWidth = function() {
 };
 
 App.Trend.prototype._updateChart = function(width, height) {
-    this._svg.selectAll(".line").remove();
-    this._svg.selectAll(".area").remove();
-    this._svg.selectAll(".dot").remove();
+    this._svg.selectAll("." + this._lineClass).remove();
+    this._svg.selectAll("." + this._areaClass).remove();
+    this._svg.selectAll("." + this._dotClass).remove();
 
     var x = this._getXFunctor(width);
     var y = this._getYFunctor(height);
 
     var line = d3.svg.line()
-        .x(function(d) {return x(d.date);})
-        .y(function(d) {return y(d.value);})
-	.interpolate("cardinal");
+        .x(function(d) {
+            return x(d.date);
+        })
+        .y(function(d) {
+            return y(d.value);
+        })
+        .interpolate("monotone");
 
     var area = d3.svg.area()
         .x(line.x())
         .y1(line.y())
-        .y0(y(0)).interpolate("cardinal");
+        .y0(y(0)).interpolate("monotone");
+
+    console.log(this._areaClass);
+    console.log(this._dotClass);
+    console.log(this._lineClass);
+
 
     this._svg.append("path")
-    .attr("class", "area")
-    .attr("d", area);
+        .attr("class", this._areaClass)
+        .attr("d", area);
 
     this._svg.append("path")
-    .attr("class", "line")
-    .attr("d", line);
+        .attr("class", this._lineClass)
+        .attr("d", line);
 
-    this._svg.selectAll(".dot")
-    .data(this._data.filter(function(d) {return d.value; }))
-    .enter().append("circle")
-    .attr("class", "dot")
-    .attr("cx", line.x())
-    .attr("cy", line.y())
-    .attr("r", 3.5);
+    this._svg.selectAll("." + this._dotClass)
+        .data(this._data.filter(function(d) {
+        return d.value;
+    }))
+        .enter().append("circle")
+        .attr("class", this._dotClass)
+        .attr("cx", line.x())
+        .attr("cy", line.y())
+        .attr("r", 3.5);
 }
 
 App.Trend.prototype._getXFunctor = function(width) {
     return d3.time.scale()
-        .domain(d3.extent(this._data, function(d, i){return d.date}))
+        .domain(d3.extent(this._data, function(d, i) {
+        return d.date
+    }))
         .range([0, width]);
 }
 
 App.Trend.prototype._getYFunctor = function(height) {
     return d3.scale.linear()
-        .domain([0, d3.max(this._data, function(d, i){return d.value})])
+        .domain([0, d3.max(this._data, function(d, i) {
+        return d.value
+    })])
         .range([height, 10]);
 }
 
@@ -437,7 +462,8 @@ App.Generator.prototype = {
     }
 }
 
-App.Util = function(){}
-App.Util.prototype.randRange = function(min, max){
+App.Util = function() {
+}
+App.Util.prototype.randRange = function(min, max) {
     return (Math.floor(Math.random() * (max - min + 1)) + min);
 }
