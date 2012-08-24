@@ -1,44 +1,94 @@
-body{    
-    background-color:#f7f7f7;
+body {
+    background-color: #f7f7f7;
+
 }
 
-#control-bar{
-    margin:15px 0px 15px 15px;
-    text-align: left;
+#control-bar {
+    margin: 15px 0px 15px 0px;
 }
 
-.tardis{
-    background-color:#f9f9f9;
-    margin:0px 20px 5px 20px;
+.tardis {
+    background-color: #f9f9f9;
+    margin: 0px 20px 5px 20px;
     -moz-box-shadow: 1px 1px 1px #c0c0c0;
     -webkit-box-shadow: 1px 1px 1px #c0c0c0;
-    box-shadow: 1px 1px 1px #c0c0c0;    
+    box-shadow: 1px 1px 1px #c0c0c0;
     height: 300px;
     border: 1px solid #c0c0c0;
 }
 
-.timeline-event-icon{
-    margin-left:-5px;
+.timeline-event-icon {
+    margin-left: -5px;
 }
 
-.debug{
-    border-width: 3px;
-    border-color: red;
-    border-style: solid;
-    /*background: rgba(0, 0, 0, 0.6)*/
+.svgBase {
+    position: absolute;
+    overflow: hidden;
 }
 
-        #debugPanel {
-	    background-color:#c0c0c0;
-	    color: orange;
-            font-family: 'Lucida Sans Unicode', Arial, sans-serif;
-            font-size: 11px;
-            line-height: 25px;
-            margin:20px;
-	    width:300px;
-        }
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
 
-        .rounded {
-            -moz-border-radius: 5px;
-            border-radius: 5px;
-        }
+.area1 {
+  fill: blue;
+  opacity: 0.5;
+}
+
+.line1 {
+  fill: none;
+  stroke: blue;
+  stroke-width: 1.5px;
+}
+
+.dot1 {
+  fill: white;
+  stroke: blue;
+  stroke-width: 1.5px;
+}
+
+.area2 {
+  fill: orange;
+  opacity: 0.5;
+}
+
+.line2 {
+  fill: none;
+  stroke: orange;
+  stroke-width: 1.5px;
+}
+
+.dot2 {
+  fill: white;
+  stroke: orange;
+  stroke-width: 1.5px;
+}
+
+.area3 {
+  fill: green;
+  opacity: 0.5;
+}
+
+.line3 {
+  fill: none;
+  stroke: green;
+  stroke-width: 1.5px;
+}
+
+.dot3 {
+  fill: white;
+  stroke: green;
+  stroke-width: 1.5px;
+}
+
+.trendDecorator {
+    position: absolute;
+    overflow: hidden;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    left: 0;
+    text-align: right;
+}

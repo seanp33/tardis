@@ -136,6 +136,7 @@ Timeline.PointHighlightDecorator.prototype.initialize = function(band, timeline)
     this._band = band;
     this._timeline = timeline;    
     this._layerDiv = null;
+    this._index = this._band._decorators.length;
 };
 
 Timeline.PointHighlightDecorator.prototype.paint = function() {
@@ -160,6 +161,7 @@ Timeline.PointHighlightDecorator.prototype.paint = function() {
         var div = doc.createElement("div");
         div.className='timeline-highlight-point-decorator';
         div.className += ' ' + this._cssClass;
+        div.innerHTML = "<h2 style='margin-top: 50px'>" + this._index + "</h2>";
                     
         if(this._color != null) {
         	  div.style.backgroundColor = this._color;

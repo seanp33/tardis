@@ -2,62 +2,58 @@
 
 <html>
 <head>
-    <link rel="stylesheet" href="css/reset.css" type="text/css" media="screen"/>
-    <link rel="stylesheet" href="css/graphics.css" type="text/css" media="screen"/>
-    <link rel="stylesheet" href="css/timeline-bundle.css" type="text/css" media="screen"/>
-    <link rel="stylesheet" href="css/main.css" type="text/css" media="screen"/>
-
-    <!-- get this jquery sht outta here if possible-->    
-    <script src="js/lib/jquery-1.7.2.js" type="text/javascript"></script>
-    <script src="js/lib/raphael.js" type="text/javascript"></script>
-    <script src="js/lib/dojo/dojo.js" type="text/javascript"></script>
+  <link rel="stylesheet" href="css/reset.css" type="text/css" media="screen" />
+  <link rel="stylesheet" href="css/graphics.css" type="text/css" media="screen" />
+  <link rel="stylesheet" href="css/timeline-bundle.css" type="text/css" media="screen" />
+  <link rel="stylesheet" href="css/main.css" type="text/css" media="screen" />
+  
+  <script type="text/javascript">
+    var Timeline_ajax_url="js/timeline/ajax/simile-ajax-api.js";
+    var Timeline_urlPrefix="js/timeline/";
+  </script>
+  <script src="js/jquery-1.7.2.js" type="text/javascript"></script>
+  <script src="js/timeline/timeline-api.js?bundle=true" type="text/javascript"></script>
+  <script src="js/d3.v2.js" type="text/javascript"></script>
+  <script src="js/app.js" type="text/javascript"></script>
+    
+    
     <script type="text/javascript">
-        var Timeline_ajax_url = "js/timeline/ajax/simile-ajax-api.js";
-        var Timeline_urlPrefix = "js/timeline/";
-    </script>
-    <script src="js/timeline/timeline-api.js?bundle=true" type="text/javascript"></script>
-    <script src="js/app.js" type="text/javascript"></script>
-
-    <script type="text/javascript">
-
+        
+        function onLoad(){
+          console.log("onLoad");
+          this.app = new App();
+	  startSimulation();
+        }
+        
         var resizeTimerID = null;
-
-        dojo.ready(function() {
-            this.app = new App();
-            startSimulation();
-        });
-
-        dojo.connect(dojo.body(), 'onresize', function() {
-            if (resizeTimerID == null) {
-                resizeTimerID = window.setTimeout(function() {
-                    resizeTimerID = null;
-                    console.log("onResize");
-                    app.layout();
-                }, 500);
-            }
-        });
-
-        function startSimulation() {
-            app.startSimulation({'wildflower':document.getElementById('timeline-container')});
+        function onResize(){
+          if (resizeTimerID == null) {
+            resizeTimerID = window.setTimeout(function() {
+              resizeTimerID = null;
+              console.log("onResize");
+              app.layout();
+            }, 500);
+          }
         }
-
-        function stopSimulation() {
-            app.stopSimulation();
+        
+        function startSimulation(){
+	  app.startSimulation({'wildflower':document.getElementById('timeline-container')});
         }
+        
+        function stopSimulation(){
+          app.stopSimulation();
+        }
+        
+        
     </script>
 </head>
 
-<body>
-<div id="control-bar">
-    <button id='pauseBtn'>pause/play</button>
-</div>
-
-<div id="timeline-container" class="tardis"></div>
-<div id="debugPanel" class="rounded">
-    <ul>
-      <li>getViewLength</li>
-      <li>getTotalViewLength</li>
-    </ul>
-</div>
+<body onload="onLoad();" onresize="onResize();">
+    <div id="control-bar">
+      
+    </div>
+    
+    <div id="timeline-container" class="tardis"></div>
+    
 </body>
 </html>

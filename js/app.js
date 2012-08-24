@@ -1,13 +1,6 @@
 function App() {
     this.tards = [];
     this.chaseInterval = 1000;
-
-    var self = this;
-    document.getElementById('pauseBtn').addEventListener("click", function() {
-        for (var i = 0; i < self.tards.length; i++) {
-            self.tards[i].pause();
-        }
-    });
 }
 
 App.prototype = {
@@ -17,7 +10,7 @@ App.prototype = {
         for (var it in containers) {
             if (containers.hasOwnProperty(it)) {
                 var tardis = this.newTardis(it, containers[it]);
-                console.log("New tardis created: " + tardis.id);
+                //console.log("New tardis created: " + tardis.id);
                 tardis.start();
             }
         }
@@ -63,22 +56,20 @@ App.prototype = {
 App.Tardis = function(id, container) {
     this.id = id;
     this.container = container;
-    this.trend = null;
     this.eventSource = new Timeline.DefaultEventSource();
     this.timeline = null;
-    this.chartOverlay = null;
     this.durationEvents = [];
+    this._util = new App.Util();
+    this._configureBands(this.container);
     this.generator = new App.Generator(this);
-    this.paused = false;
-    this._etherDelegate = null;
-    this._initTimeline(this.container);
-    this._initEtherDelegate();
-    this._initRecenterDivHandler();
-    this._initTrending();
+    this.count = 0;
+    this.trendDecorator = null;
+    this.trendDecorators = [];
 }
 
 App.Tardis.prototype = {
-    _initTimeline:function() {
+
+    _configureBands:function() {
         var theme = Timeline.ClassicTheme.create();
         theme.event.bubble.width = 250;
         theme.event.tape.height = 10;
@@ -107,70 +98,15 @@ App.Tardis.prototype = {
             })
         ];
 
+
         bandInfos[1].syncWith = 0;
         bandInfos[1].highlight = true;
-	
         this.timeline = Timeline.create(this.container, bandInfos, Timeline.HORIZONTAL);
-    },
-    
-    _initEtherDelegate:function(){
-	var ether = this.timeline._bands[0]._ether;	
-	var etherPainter = this.timeline._bands[0]._etherPainter;
-	var eventPainter = this.timeline._bands[0]._eventPainter;
-	this._etherDelegate = {
+        this._initializePrimaryBand();
 
-	    timeline:this.timeline,
-	    ether:ether,
-	    etherPainter:etherPainter,
-	    eventPainter:eventPainter,
-
-	    dateToPixelOffset:function(fromDate, toDate){
-		return ether.dateToPixelOffset.call(ether, fromDate, toDate);
-	    },
-	    
-	    pixelOffsetToDate:function(pixels){
-		console.log("pixelOffsetToDate: " + pixels);
-		return ether.pixelOffsetToDate.call(ether, pixels);
-	    }
-	}
-    },
-
-    _initRecenterDivHandler:function(){
-	var band = this.timeline._bands[0];
-	dojo.connect(band, '_recenterDiv', this, '_onRecenterDiv');
-	//dojo.connect(band, 'setBandShiftAndWidth', this, '_onSetBandShiftAndWidth')
-    },
-    
-    _initTrending:function(inner){	
-	var inners = dojo.query('> div .timeline-band-inner', this.container);
-	
-	if (inners.length == 0) {
-	    throw new Error("could not locate timeline-band-inner within container");	    
-	}
-	
-	this.chartOverlayContainer = inners[0];
-	var chartOverlayId = this.id + "ChartContainer";
-	this.chartOverlay = dojo.create("div", {id:chartOverlayId, class:'timeline-band-layer', style:{'z-index':'200'}}, this.chartOverlayContainer);	    
-	this.trend = new App.Trend(this._etherDelegate, this.chartOverlay, this.chartOverlayContainer);
-	this.trend.paint();
-    },
-
-    _onRecenterDiv:function(){
-	console.log("recentering...");
-    },
-
-    pause:function() {
-        this.paused = !this.paused;
-	if(this.paused){
-	    this.generator.stop();
-	}else{
-	    this.generator.start();
-	}
     },
 
     chase:function(chaseInterval) {
-        if (this.paused) return;
-
         var now = new Date();
         this.expireDurationEvents(now);
 
@@ -199,7 +135,11 @@ App.Tardis.prototype = {
     },
 
     layout:function() {
-	this.timeline.layout();
+        this.timeline.layout();
+    },
+
+    paint:function() {
+        this.timeline.paint();
     },
 
     destroy:function() {
@@ -208,13 +148,17 @@ App.Tardis.prototype = {
     },
 
     onGenerated:function(data) {
+        //console.log("Tardis <" + this.id + "> handling generated <" + data._text+ ">");
+
         if (!data._instant) {
             this.durationEvents.push(data);
         }
         this.eventSource._events.add(data);
         this.eventSource._fire("onAddMany", []);
 
-	this.trend.generatePoint(new Date());
+        this.updateDecorator();
+
+        this.paint();
     },
 
     expireDurationEvents:function(date) {
@@ -228,15 +172,190 @@ App.Tardis.prototype = {
 
                 // force a repaint so that style changes apply immediately
                 // http://code.google.com/p/simile-widgets/wiki/Timeline_EventPainterClass
-                this.timeline._bands[0]._eventPainter.paint();
+                this.b0._eventPainter.paint();
+                //this.timeline._bands[0]._eventPainter.paint();
             } else {
                 maintained.push(event);
             }
         }
 
         this.durationEvents = maintained;
+    },
+
+    updateDecorator:function() {
+
+        if (this.trendDecorators.length < 3) {
+            var i=this.trendDecorators.length+1;
+            var td = new App.Trend({startDate:new Date(), endDate:new Date(), dotClass:"dot"+i, lineClass:"line"+i, areaClass:"area"+i});
+            td.initialize(this.b0, this.timeline);
+            this.b0._decorators.push(td);
+            this.trendDecorators.push(td);
+        } else {
+            var d = new Date();
+            for (var i = 0; i < this.trendDecorators.length; i++) {
+                var td = this.trendDecorators[i];
+                td.update(d, this._util.randRange(0, 1000));
+            }
+        }
+    },
+
+    _initializePrimaryBand:function() {
+        this.b0 = this.timeline._bands[0];
+        this.b0.addOnScrollListener(this._handleOnScroll);
+    },
+
+    _handleOnScroll:function(band) {
+        //console.log('handling onscroll for band: ' + band.getViewOffset());
     }
 }
+
+App.Trend = function(params) {
+    this._unit = params.unit != null ? params.unit : SimileAjax.NativeDateUnit;
+    this._startDate = params.startDate || null;
+    this._endDate = params.endDate;
+    this._dotClass = params.dotClass;
+    this._lineClass = params.lineClass;
+    this._areaClass = params.areaClass;
+    this._cssClass = 'trendDecorator';
+    this._layerDiv = null;
+    this._svg = null;
+    this._data = [];
+};
+
+App.Trend.prototype.initialize = function(band, timeline) {
+    this._band = band;
+    this._timeline = timeline;
+};
+
+App.Trend.prototype.update = function(date, value) {
+    this._endDate = date;
+    this._data.push({date:date, value:value});
+    this.paint();
+}
+
+App.Trend.prototype.paint = function() {
+    if (this._layerDiv == null) {
+        this._initLayerDiv();
+    }
+
+    this._updatePositionAndWidth();
+
+    this._layerDiv.style.display = "block";
+};
+
+App.Trend.prototype._isValid = function(minDate, maxDate) {
+    if (this._unit.compare(this._endDate, maxDate) < 0 &&
+        this._unit.compare(this._endDate, minDate) > 0) {
+        return true;
+    } else {
+        return false;
+    }
+};
+
+App.Trend.prototype._initLayerDiv = function() {
+    if (this._isValid(this._band.getMinDate(), this._band.getMaxDate())) {
+        this._layerDiv = this._band.createLayerDiv(10);
+        this._layerDiv.setAttribute("name", "span-highlight-decorator"); // for debugging
+        this._layerDiv.style.display = "none";
+
+        var doc = this._timeline.getDocument();
+        this.div = doc.createElement("div");
+        this.div.className = this._cssClass;
+        this._layerDiv.appendChild(this.div);
+
+        this._svg = d3.select(this.div).append("svg")
+            .datum(this._data)
+            .attr("height", "100%")
+            .attr("width", "100%"); // initial width of 100
+    } else {
+        throw new Error("min and/or max date are not valid. unable to initialize App.Trend layer div");
+    }
+};
+
+App.Trend.prototype._updatePositionAndWidth = function() {
+    var endPixel = this._band.dateToPixelOffset(this._endDate);
+    var width = "3px";
+    var left = endPixel + "px";
+
+    if (this._startDate != null) {
+        var startPixel = this._band.dateToPixelOffset(this._startDate);
+        width = endPixel - startPixel;
+        left = startPixel;
+    }
+
+    this.div.style.left = left + "px";
+    this.div.style.width = width + "px";
+
+    this._svg.attr("x", left + "px").attr("width", width + "px");
+
+    this._updateChart(width, 257);
+};
+
+App.Trend.prototype._updateChart = function(width, height) {
+    this._svg.selectAll("." + this._lineClass).remove();
+    this._svg.selectAll("." + this._areaClass).remove();
+    this._svg.selectAll("." + this._dotClass).remove();
+
+    var x = this._getXFunctor(width);
+    var y = this._getYFunctor(height);
+
+    var line = d3.svg.line()
+        .x(function(d) {
+            return x(d.date);
+        })
+        .y(function(d) {
+            return y(d.value);
+        })
+        .interpolate("monotone");
+
+    var area = d3.svg.area()
+        .x(line.x())
+        .y1(line.y())
+        .y0(y(0)).interpolate("monotone");
+
+    console.log(this._areaClass);
+    console.log(this._dotClass);
+    console.log(this._lineClass);
+
+
+    this._svg.append("path")
+        .attr("class", this._areaClass)
+        .attr("d", area);
+
+    this._svg.append("path")
+        .attr("class", this._lineClass)
+        .attr("d", line);
+
+    this._svg.selectAll("." + this._dotClass)
+        .data(this._data.filter(function(d) {
+        return d.value;
+    }))
+        .enter().append("circle")
+        .attr("class", this._dotClass)
+        .attr("cx", line.x())
+        .attr("cy", line.y())
+        .attr("r", 3.5);
+}
+
+App.Trend.prototype._getXFunctor = function(width) {
+    return d3.time.scale()
+        .domain(d3.extent(this._data, function(d, i) {
+        return d.date
+    }))
+        .range([0, width]);
+}
+
+App.Trend.prototype._getYFunctor = function(height) {
+    return d3.scale.linear()
+        .domain([0, d3.max(this._data, function(d, i) {
+        return d.value
+    })])
+        .range([height, 10]);
+}
+
+App.Trend.prototype.softPaint = function() {
+};
+
 
 App.Generator = function(tardis) {
     this.tardis = tardis;
@@ -256,8 +375,7 @@ App.Generator = function(tardis) {
         "#__s__ exercises against the censored researcher.",
         "The birth divides #__s__.",
         "#__s__ drowns an optimum hardship."];
-
-    this.utils = new App.Utils();
+    this._util = new App.Util();
 }
 
 App.Generator.icons = ["asterisk_orange.png","flag_yellow.png","lightning.png","tick.png","bomb.png","heart.png","rosette.png","bug.png","exclamation.png","help.png","star.png","eye.png","information.png","stop.png","flag_green.png","lightbulb.png","tag_blue_edit.png"];
@@ -319,13 +437,13 @@ App.Generator.prototype = {
                 tapeRepeat:'x-repeat'
             });
         } else {
-	    	return new Timeline.DefaultEventSource.Event({
-		    icon:icon,
-		    start:date,
-		    instant:true,
-		    description:'generated for tardis ' + this.tardis.id,
-		    text:lbl
-		});	   
+            return new Timeline.DefaultEventSource.Event({
+                icon:icon,
+                start:date,
+                instant:true,
+                description:'generated for tardis ' + this.tardis.id,
+                text:lbl
+            });
         }
     },
 
@@ -340,96 +458,12 @@ App.Generator.prototype = {
     },
 
     _rr:function(min, max) {
-        return this.utils.randRange(min, max);
+        return this._util.randRange(min, max);
     }
 }
 
-App.Utils = function(){}
-
-App.Utils.prototype = {
-    randRange:function(min, max){
-	return (Math.floor(Math.random() * (max - min + 1)) + min);
-    }
+App.Util = function() {
 }
-
-App.Trend = function(etherDelegate, container, outerContainer){
-    this._paper = null;    
-    this._points = [];
-    this._etherDelegate = etherDelegate;    
-    this._container = container;
-    this._outerContainer = outerContainer
-    this.utils = new App.Utils();
-    this._init();
-}
-
-App.Trend.prototype = {   
-    _init:function(){
-	var pos = dojo.position(this._outerContainer);
-	this._paper = Raphael(this._container.getAttribute("id"), Math.round(pos.w), Math.round(pos.h));
-    },
-                                                                           
-    addPoint:function(x, y){
-	console.log('adding point: ' + x + ", " + y);
-	this._points.push({x:x,y:y});
-    },
-
-    generatePoint:function(time){
-	var x = this._etherDelegate.dateToPixelOffset(time);
-	var y =  this.utils.randRange(10, this._paper.height-50);
-
-	this.addPoint(x, y);
-	
-	var len = this._points.length;
-
-	var point = null;
-	var prevPoint = null;
-	if(len > 1){
-	    prevPoint = this._points[len-2];
-	}
-
-	point = this._points[len-1];
-
-	if(prevPoint){
-	    var path = "M" + prevPoint.x + " " + prevPoint.y + " L" + point.x + " " + point.y;
-	}
-			
-	var c = this._paper.circle(point.x, point.y, 10);
-	c.attr("fill", "#000");
-	c.attr("stroke", "#fff");
-	c.attr("stroke-width", 3);
-	var t = this._paper.text(point.x, point.y, len);
-	t.attr("fill", "#fff");
-
-	// update the width of the container and the paper to account for new points
-	//this._paper.setSize(this._paper.width += 20, this._paper.height);	
-	
-	//var cwidth = dojo.style(this._container, "width");	
-	//dojo.style(this._container, "width", cwidth+20 + "px");
-
-    },
-
-    paint:function(){
-	var len = this._points.length;
-	
-	// edges
-	for(var i=0;i<len;i++){
-	    if(i+1 != len){
-		var p1 = this._points[i];
-		var p2 = this._points[i+1];	    
-		var path = "M" + p1.x + " " + p1.y + " L" + p2.x + " " + p2.y;
-		this._paper.path(path).attr("stroke-width", 1);
-	    }
-	}
-
-	// nodes
-	for(var i=0;i<len;i++){
-	    var p = this._points[i];
-	    var c = this._paper.circle(p.x, p.y, 10);
-	    c.attr("fill", "#000");
-	    c.attr("stroke", "#fff");
-	    c.attr("stroke-width", 3);
-	    var t = this._paper.text(p.x, p.y, i);
-	    t.attr("fill", "#fff");
-	}
-    }   
+App.Util.prototype.randRange = function(min, max) {
+    return (Math.floor(Math.random() * (max - min + 1)) + min);
 }
