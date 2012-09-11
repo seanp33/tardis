@@ -267,7 +267,7 @@ App.Trend.prototype._isValid = function(minDate, maxDate) {
 
 App.Trend.prototype._initLayerDiv = function() {
     if (this._isValid(this._band.getMinDate(), this._band.getMaxDate())) {
-        this._layerDiv = this._band.createLayerDiv(10);
+        this._layerDiv = this._band.createLayerDiv(5000);
         this._layerDiv.setAttribute("name", "span-highlight-decorator"); // for debugging
         this._layerDiv.style.display = "none";
 
@@ -347,6 +347,16 @@ App.Trend.prototype._updateChart = function(width, height) {
         .attr("cy", line.y())
         .attr("r", 2);
 }
+
+
+/*
+* .append("text")
+        .attr("x", line.x() + 6)
+        .attr("y", line.y())
+        .attr("dy", ".35em")
+        .attr("text-anchor", "middle")
+        .text(function(d) { return d.value; })
+        */
 
 App.Trend.prototype._getXFunctor = function(width) {
     return d3.time.scale()

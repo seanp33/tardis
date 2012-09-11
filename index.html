@@ -30,7 +30,6 @@
           if (resizeTimerID == null) {
             resizeTimerID = window.setTimeout(function() {
               resizeTimerID = null;
-              console.log("onResize");
               app.layout();
             }, 500);
           }

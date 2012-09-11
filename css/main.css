@@ -92,3 +92,9 @@ body {
     left: 0;
     text-align: right;
 }
+
+.tooltip{
+    position:absolute;
+    visibility:hidden;
+    z-index:6000;
+}
