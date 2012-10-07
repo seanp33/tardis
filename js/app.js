@@ -326,8 +326,8 @@ App.Trend.prototype._updateChart = function(width, height) {
         .x(line.x())
         .y1(line.y())
         .y0(y(0))
-	.interpolate("monotone")
-	.tension(0);
+	    .interpolate("monotone")
+	    .tension(0);
 
     this._svg.append("path")
         .attr("class", this._areaClass)
@@ -347,16 +347,6 @@ App.Trend.prototype._updateChart = function(width, height) {
         .attr("cy", line.y())
         .attr("r", 2);
 }
-
-
-/*
-* .append("text")
-        .attr("x", line.x() + 6)
-        .attr("y", line.y())
-        .attr("dy", ".35em")
-        .attr("text-anchor", "middle")
-        .text(function(d) { return d.value; })
-        */
 
 App.Trend.prototype._getXFunctor = function(width) {
     return d3.time.scale()

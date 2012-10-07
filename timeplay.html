@@ -1,0 +1,79 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>timeplay</title>
+    <script src="js/d3.v2.js"></script>
+    <script type="text/javascript">
+
+        function init() {
+            console.log('init');
+            var tp = new Tp();
+            tp.init();
+
+            // starting at 0
+            tp.update(tp.getDataSet(24, 0));
+
+            setInterval(function() {
+                tp.update(tp.getDataSet(24));
+            }, 4000);
+        }
+
+        function Tp() {
+            this.HOUR = 3600000;
+        }
+
+        Tp.prototype = {
+            init:function() {
+                this.svg = d3.select("#container")
+                        .append("svg")
+                        .attr("height", "100%")
+                        .attr("width", "100%");
+            },
+
+            update:function() {
+
+            },
+
+            getXFunctor:function(width) {
+                return d3.time.scale()
+                        .domain(d3.extent(this._data, function(d, i) {
+                    return d.date
+                }))
+                        .range([0, width]);
+            },
+
+            getYFunctor:function(height) {
+                return d3.scale.linear()
+                        .domain([0, d3.max(this._data, function(d, i) {
+                    return d.value;
+                })]).range([height, 10]);
+            },
+
+            getDataSet:function(hours, value) {
+                var data = [];
+
+                while (hours > 0) {
+                    var d = new Date();
+                    d.setTime(d.getTime() - (hours * this.HOUR));
+                    hours -= 1;
+                    var val = value;
+                    if (!val) val = this.rr(1, 1000);
+                    data.push({date:d, value:val});
+                }
+
+                return data;
+            },
+
+            rr:function(min, max) {
+                return (Math.floor(Math.random() * (max - min + 1)) + min);
+            }
+        };
+
+    </script>
+</head>
+<body onload="init();">
+
+<div id="container" class="container"></div>
+</body>
+</html>
